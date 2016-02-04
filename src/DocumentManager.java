@@ -27,9 +27,7 @@ public class DocumentManager implements DocumentListener {
             } catch (BadLocationException ex) {
                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
             }
-            latest = new Operation(de.getOffset(), what, latest);
-        } else if(de.getType() == DocumentEvent.EventType.REMOVE){
-            latest = new Operation(de.getOffset(), de.getLength()+de.getOffset(), latest);
+            latest = new AddOperation(de.getOffset(), what, latest);
         }
         System.out.println(latest.evaluate());
     }
@@ -37,7 +35,7 @@ public class DocumentManager implements DocumentListener {
     @Override
     public void removeUpdate(DocumentEvent de) {
         if(de.getType() == DocumentEvent.EventType.REMOVE){
-            latest = new Operation(de.getOffset(), de.getLength()+de.getOffset(), latest);
+            latest = new DelOperation(de.getOffset(), de.getLength()+de.getOffset(), latest);
         }
         System.out.println(latest.evaluate());
     }
