@@ -1,4 +1,7 @@
 
+import operations.Operation;
+import operations.AddOperation;
+import operations.DelOperation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.DocumentEvent;

@@ -1,3 +1,5 @@
+package operations;
+
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,6 +46,7 @@ public class AddOperation extends Operation {
 
     @Override
     protected Operation doRebaseOn(Operation newBase) {// Do the actual rebase
+        if (newBase instanceof NullOperation) return new AddOperation(index, text, newBase);
         if (newBase instanceof AddOperation) {
             AddOperation ao = (AddOperation) newBase;
             if (ao.index <= index) {
@@ -68,4 +71,33 @@ public class AddOperation extends Operation {
     protected Operation copy() {
         return new AddOperation(index, text, getPrevious());
     }
+
+    @Override
+    protected Operation doMerge(Operation next) {
+        if (next instanceof NullOperation) return this.copy();
+        if (next instanceof AddOperation) {
+            AddOperation n = (AddOperation) next;
+            if (n.index >= index && n.index <= index + text.length()) {
+                String newText = text.substring(0, n.index - index) + n.text + text.substring(n.index - index);
+                return new AddOperation(index, newText, getPrevious());
+            }
+        } else if (next instanceof DelOperation) {
+            DelOperation n = (DelOperation) next;
+            if (n.getStart() >= index && n.getEnd() <= index + text.length()) {
+                String newText = text.substring(0, n.getStart() - index) + text.substring(n.getEnd() - index);
+                return new AddOperation(index, newText, getPrevious());
+            }
+        }
+        return null;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public String getText() {
+        return text;
+    }
+    
+    
 }

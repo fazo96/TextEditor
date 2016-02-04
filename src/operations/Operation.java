@@ -1,3 +1,5 @@
+package operations;
+
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,8 +106,29 @@ public abstract class Operation {
     public Operation rebaseOn(Operation newBase) {
         return this.rebaseOn(newBase, newBase);
     }
-    
+
     protected abstract Operation doRebaseOn(Operation newBase);
+
+    /**
+     * Returns an operation that combines two of them if possible, and null
+     * otherwise
+     *
+     * @param next the operation to merge with
+     * @return an operation equivalent to this one and the next one, or null if
+     * they can't be merged
+     */
+    public Operation merge(Operation next) {
+        if (next.getPrevious() != this) {
+            // Maybe shouldn't do this... but oh well
+            next = next.rebaseOn(this);
+            if (next == null) {
+                return null;
+            }
+        }
+        return doMerge(next);
+    }
+
+    protected abstract Operation doMerge(Operation next);
 
     /**
      * An identical copy of this Operation but which maintains the same
