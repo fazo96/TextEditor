@@ -41,4 +41,9 @@ public class NullOperation extends Operation {
         return new NullOperation(getPrevious());
     }
 
+    @Override
+    public String getName() {
+        return "NULL";
+    }
+
 }

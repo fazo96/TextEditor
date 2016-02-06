@@ -16,7 +16,7 @@ import javax.swing.text.Document;
  */
 public class DelOperation extends Operation {
 
-    private int start, end;
+    private final int start, end;
 
     /**
      * Creates a delete operation. Deletes all text between the given indexes.
@@ -26,6 +26,7 @@ public class DelOperation extends Operation {
      * @param previous the operation on top of which this one applies
      */
     public DelOperation(int from, int to, Operation previous) {
+        super(previous);
         this.end = to;
         this.start = from;
     }
@@ -42,6 +43,16 @@ public class DelOperation extends Operation {
 
     @Override
     protected String applyThis(String base) {
+        System.out.println("- DEL\nSTART: " + start + "\nEND:" + end + "\nLEN: " + base.length() + "\nBASE: " + base);
+        if (start == 0) {
+            if (end == base.length()) {
+                return "";
+            }
+            return base.substring(end);
+        }
+        if (end == base.length()) {
+            return base.substring(0, start);
+        }
         return base.substring(0, start) + base.substring(end);
     }
 
@@ -99,6 +110,11 @@ public class DelOperation extends Operation {
         }
         // TODO: implement this
         return null;
+    }
+
+    @Override
+    public String getName() {
+        return "DEL";
     }
 
 }

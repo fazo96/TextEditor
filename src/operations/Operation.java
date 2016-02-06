@@ -1,6 +1,6 @@
 package operations;
 
-
+import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.BadLocationException;
@@ -11,7 +11,7 @@ import javax.swing.text.Document;
  *
  * @author fazo
  */
-public abstract class Operation {
+public abstract class Operation implements Serializable {
 
     private Operation previous; // The operation on top of which this one is applied
     private String cache; // cache to store result
@@ -138,6 +138,20 @@ public abstract class Operation {
      */
     protected abstract Operation copy();
 
+    public int checksum() {
+        return evaluate().hashCode();
+    }
+
+    public Operation find(int checksum) {
+        if (checksum() == checksum) {
+            return this;
+        }
+        if (previous == null) {
+            return null;
+        }
+        return previous.find(checksum);
+    }
+
     public Operation getPrevious() {
         return previous;
     }
@@ -145,5 +159,7 @@ public abstract class Operation {
     public void setPrevious(Operation previous) {
         this.previous = previous;
     }
+
+    public abstract String getName();
 
 }

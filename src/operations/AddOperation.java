@@ -1,12 +1,9 @@
 package operations;
 
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-import javax.swing.text.html.HTML;
-import sun.awt.geom.AreaOp;
 
 /**
  *
@@ -14,8 +11,8 @@ import sun.awt.geom.AreaOp;
  */
 public class AddOperation extends Operation {
 
-    private int index;
-    private String text;
+    private final int index;
+    private final String text;
 
     /**
      * Creates an insert operation. Inserts the given text at the given index
@@ -41,12 +38,22 @@ public class AddOperation extends Operation {
 
     @Override
     protected String applyThis(String base) {
-        return base.substring(0, index) + text + base.substring(index + text.length());
+        System.out.println("- ADD\nINDEX: " + index);
+        System.out.println("LEN: " + text.length());
+        System.out.println("BASE: " + base);
+        if(index == base.length()) return base + text;
+        String s = base.substring(0, index) + text;
+        if (base.length() > index) {
+            s += base.substring(index + text.length());
+        }
+        return s;
     }
 
     @Override
     protected Operation doRebaseOn(Operation newBase) {// Do the actual rebase
-        if (newBase instanceof NullOperation) return new AddOperation(index, text, newBase);
+        if (newBase instanceof NullOperation) {
+            return new AddOperation(index, text, newBase);
+        }
         if (newBase instanceof AddOperation) {
             AddOperation ao = (AddOperation) newBase;
             if (ao.index <= index) {
@@ -74,7 +81,9 @@ public class AddOperation extends Operation {
 
     @Override
     protected Operation doMerge(Operation next) {
-        if (next instanceof NullOperation) return this.copy();
+        if (next instanceof NullOperation) {
+            return this.copy();
+        }
         if (next instanceof AddOperation) {
             AddOperation n = (AddOperation) next;
             if (n.index >= index && n.index <= index + text.length()) {
@@ -98,6 +107,10 @@ public class AddOperation extends Operation {
     public String getText() {
         return text;
     }
-    
-    
+
+    @Override
+    public String getName() {
+        return "ADD";
+    }
+
 }
