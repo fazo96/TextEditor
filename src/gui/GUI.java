@@ -149,7 +149,7 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_hostMenuItemActionPerformed
 
     private void connectMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectMenuItemActionPerformed
-        dm.linkConnection(new Connection("localhost", 9035));
+        dm.linkConnection(new Connection("localhost", 9035, dm));
     }//GEN-LAST:event_connectMenuItemActionPerformed
 
     /**

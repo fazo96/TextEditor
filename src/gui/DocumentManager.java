@@ -74,7 +74,7 @@ public class DocumentManager implements DocumentListener {
 
     private void sendViaConnection() {
         if (conn != null) {
-            conn.update(latest);
+            conn.update(latest, true);
         }
     }
 
@@ -84,11 +84,11 @@ public class DocumentManager implements DocumentListener {
     }
 
     public void apply(Operation o) {
-        // TODO: make sure user doesn't touch document while operations are being applied
         if (o == null) {
             return;
         }
         if (latest != o) {
+            listen = false;
             if (latest == null) {
                 o.build(doc);
                 latest = o;
@@ -105,12 +105,12 @@ public class DocumentManager implements DocumentListener {
                     latest = rebased;
                 }
             }
+            listen = true;
         }
     }
 
     public void linkConnection(Connection c) {
         this.conn = c;
-        c.linkDocumentManager(this);
     }
 
     public void wipe() {
@@ -119,7 +119,7 @@ public class DocumentManager implements DocumentListener {
         }
     }
 
-    public Operation getLatest() {
+    public Operation getStack() {
         return latest;
     }
 

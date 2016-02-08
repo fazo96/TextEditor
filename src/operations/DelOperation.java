@@ -35,9 +35,9 @@ public class DelOperation extends Operation {
     public void applyTo(Document d) {
         // Delete
         try {
-            d.remove(start, end);
+            d.remove(start, end - start);
         } catch (BadLocationException ex) {
-            Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("Could not apply DelOperation to Document:\nDocument is " + d.getLength() + " chars long\nOperation deletes " + (end-start) + " chars from " + start + "\n" + ex);
         }
     }
 

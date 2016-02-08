@@ -18,13 +18,13 @@ public class Connection implements Runnable {
     private Socket s;
     private ObjectInputStream ois;
     private ObjectOutputStream oos;
-    private Operation stack = null;
     private boolean running;
     private Thread receiver;
     private Server server;
     private DocumentManager dm;
 
-    public Connection(String address, int port) {
+    public Connection(String address, int port, DocumentManager dm) {
+        this.dm = dm;
         try {
             s = new Socket(address, port);
         } catch (IOException ex) {
@@ -39,15 +39,7 @@ public class Connection implements Runnable {
     public Connection(Socket s, Server server) {
         this.s = s;
         this.server = server;
-        stack = server.getStack();
         init();
-    }
-
-    public void linkDocumentManager(DocumentManager dm) {
-        this.dm = dm;
-        if (stack != null) {
-            dm.apply(stack);
-        }
     }
 
     private void init() {
@@ -86,12 +78,11 @@ public class Connection implements Runnable {
             return;
         }
         System.out.println("NET - Sending Full Stack");
-        stack = server.getStack();
-        if (stack == null) {
+        if (server.getStack() == null) {
             System.out.println("Can't send null object");
         } else {
             try {
-                oos.writeObject(stack);
+                oos.writeObject(server.getStack());
             } catch (IOException ex) {
                 Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -106,44 +97,28 @@ public class Connection implements Runnable {
             try {
                 oos.writeObject(s);
             } catch (IOException ex) {
-                Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
+                // Dead connection
+                running = false;
             }
         }
     }
 
-    public void update(Operation newStack) {
+    public void update(Operation newStack, boolean isLocalUpdate) {
         if (newStack == null) {
             return;
         }
         if (isClient()) {
-            if (stack == null) {
-                System.out.println("CONN: setting base stack");
-                stack = newStack;
+            System.out.println("Processing " + (isLocalUpdate ? "local" : "remote") + " update:");
+            if (isLocalUpdate) {
                 System.out.println("CONN: Sending base stack operation to server...");
                 send(OperationConverter.convert(newStack));
-            } else if (stack == newStack) {
-                System.out.println("CONN: Update wasn't actually an update");
-            } else {
-                System.out.println("CONN: trying to update stack");
-                Operation rebased = newStack.rebaseOn(stack);
-                if (rebased == null) {
-                    System.out.println("CONN: FATAL: stack update failed");
-                } else if (rebased != stack) {
-                    System.out.println("CONN: stack update successfull");
-                    stack = rebased;
-                    System.out.println("CONN: Sending new update to server...");
-                    send(OperationConverter.convert(newStack));
-                } else {
-                    System.out.println("CONN: Update wasn't actually an update");
-                }
             }
         } else {
             System.out.println("SERVER: updating stack from client");
             server.update(newStack, this);
-            stack = server.getStack();
         }
         if (dm != null) {
-            dm.apply(stack);
+            dm.apply(newStack);
         }
     }
 
@@ -167,16 +142,16 @@ public class Connection implements Runnable {
                 }
             } else if (o instanceof String) {
                 System.out.println("NET - String Incoming:\n" + ((String) o));
-                Operation recv = OperationConverter.read((String) o, stack);
+                Operation recv = OperationConverter.read((String) o, isServer() ? server.getStack() : dm.getStack());
                 if (recv == null) {
                     System.out.println("Could not undestand operation: " + ((String) o));
                 } else {
                     System.out.println("NET - Decoded Operation successfully");
-                    update(recv);
+                    update(recv, false);
                 }
             } else if (o instanceof Operation) {
                 System.out.println("NET - Received Operation from socket");
-                update((Operation) o);
+                update((Operation) o, false);
             }
         }
     }
