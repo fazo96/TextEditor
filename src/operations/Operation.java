@@ -89,20 +89,61 @@ public abstract class Operation implements Serializable {
      *
      * @param d the document on which to apply this operation
      */
-    protected abstract void applyTo(Document d);
+    public abstract void applyTo(Document d);
 
-    protected Operation rebaseOn(Operation newBase, Operation origNewBase) {
-        if (newBase.getPrevious() == null && getPrevious() != null) {
-            // Travel back my history
-            return this.copy().rebaseOn(getPrevious().rebaseOn(newBase));
-        } else if (newBase.getPrevious() != null && getPrevious() != null && newBase.getPrevious() != getPrevious()) {
-            // Travel back newbase's history
-            return this.copy().rebaseOn(newBase.getPrevious(), newBase).rebaseOn(newBase);
+    /**
+     * Applies all Operations that are after the lastApplied argument.
+     *
+     * @param d the document to apply to
+     * @param lastApplied the last applied operation to the document
+     * @throws Exception if lastApplied is not in the operation stack
+     */
+    public void apply(Document d, Operation lastApplied) throws Exception {
+        if (previous == null && lastApplied != null) {
+            throw new Exception("lastApplied Operation was not in stack");
+        }
+        if (lastApplied == this) {
+            return;
+        }
+        if (lastApplied == previous) {
+            applyTo(d);
         } else {
-            return doRebaseOn(newBase);
+            previous.apply(d, lastApplied);
+            applyTo(d);
         }
     }
 
+    protected Operation rebaseOn(Operation newBase, Operation origNewBase) {
+        if (newBase == this) {
+            System.err.println("REBASE: Success, null operation");
+            return new NullOperation(previous);
+        } else if (newBase == getPrevious()) {
+            // Unnecessary rebase
+            System.err.println("REBASE: Success, unnecessary rebase");
+            return this;
+        }/* else if (newBase.getPrevious() == getPrevious()) {
+            // Do the actual rebase operation
+            return doRebaseOn(newBase);
+        } else if (newBase.getPrevious() == null && getPrevious() != null) {
+            // Travel back my history (REVIEW THIS)
+            return this.copy().rebaseOn(getPrevious().rebaseOn(newBase));
+        } else if (newBase.getPrevious() != null && getPrevious() != null && newBase.getPrevious() != getPrevious()) {
+            // Travel back newbase's history (REVIEW THIS)
+            return this.copy().rebaseOn(newBase.getPrevious(), newBase).rebaseOn(newBase);
+        }*/
+        // Impossible rebase
+        System.err.println("REBASE: Failed");
+        return null;
+    }
+
+    /**
+     * Returns a copy of this Operation adapted to be applied on a different
+     * operation or null when not possible.
+     *
+     * @param newBase the new base of the Operation
+     * @return an equivalent operation to this one, but adapted to be applied on
+     * top of newBase or null when not possible
+     */
     public Operation rebaseOn(Operation newBase) {
         return this.rebaseOn(newBase, newBase);
     }
@@ -150,6 +191,26 @@ public abstract class Operation implements Serializable {
             return null;
         }
         return previous.find(checksum);
+    }
+
+    /**
+     * Wether this operation has the given operation as ancestor or is the given
+     * operation.
+     *
+     * @param o the operation to check
+     * @return true or false
+     */
+    public boolean contains(Operation o) {
+        if (o == null) {
+            return true;
+        }
+        if (o == this) {
+            return true;
+        }
+        if (previous == null) {
+            return false;
+        }
+        return previous.contains(o);
     }
 
     public Operation getPrevious() {

@@ -1,3 +1,4 @@
+package gui;
 
 import operations.Operation;
 import operations.AddOperation;
@@ -8,6 +9,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import net.Connection;
 import net.OperationConverter;
 
 /**
@@ -20,7 +22,9 @@ import net.OperationConverter;
 public class DocumentManager implements DocumentListener {
 
     private Operation latest = null;
-    private Document d;
+    private Document doc;
+    private Connection conn;
+    private boolean listen = true;
 
     private void debug() {
         if (latest != null) {
@@ -37,6 +41,9 @@ public class DocumentManager implements DocumentListener {
 
     @Override
     public void insertUpdate(DocumentEvent de) {
+        if (!listen) {
+            return;
+        }
         if (de.getType() == DocumentEvent.EventType.INSERT) {
             String what = "";
             try {
@@ -45,16 +52,19 @@ public class DocumentManager implements DocumentListener {
                 Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
             }
             latest = new AddOperation(de.getOffset(), what, latest);
+            sendViaConnection();
         }
-        debug();
     }
 
     @Override
     public void removeUpdate(DocumentEvent de) {
+        if (!listen) {
+            return;
+        }
         if (de.getType() == DocumentEvent.EventType.REMOVE) {
             latest = new DelOperation(de.getOffset(), de.getLength() + de.getOffset(), latest);
+            sendViaConnection();
         }
-        debug();
     }
 
     @Override
@@ -62,18 +72,67 @@ public class DocumentManager implements DocumentListener {
         // Java's PlainDocument doesn't emit changedUpdate events
     }
 
-    public DocumentManager(Document d) {
-        this.d = d;
-        d.addDocumentListener(this);
+    private void sendViaConnection() {
+        if (conn != null) {
+            conn.update(latest);
+        }
+    }
+
+    public DocumentManager(Document doc) {
+        this.doc = doc;
+        doc.addDocumentListener(this);
     }
 
     public void apply(Operation o) {
-        // Todo implement this
-        // make sure user doesn't touch document while operations are being applied
+        // TODO: make sure user doesn't touch document while operations are being applied
+        if (o == null) {
+            return;
+        }
+        if (latest != o) {
+            if (latest == null) {
+                o.build(doc);
+                latest = o;
+            } else {
+                Operation rebased = o.rebaseOn(latest);
+                if (rebased == null) {
+                    System.out.println("FATAL: rebase failed");
+                } else {
+                    try {
+                        rebased.apply(doc, latest);
+                    } catch (Exception ex) {
+                        Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    latest = rebased;
+                }
+            }
+        }
+    }
+
+    public void linkConnection(Connection c) {
+        this.conn = c;
+        c.linkDocumentManager(this);
+    }
+
+    public void wipe() {
+        if (latest != null) {
+            apply(new DelOperation(0, latest.evaluate().length(), latest));
+        }
     }
 
     public Operation getLatest() {
         return latest;
+    }
+
+    public Connection getLinkedConnection() {
+        return conn;
+    }
+
+    public boolean isListening() {
+        return listen;
+    }
+
+    public void setListen(boolean listen) {
+        this.listen = listen;
     }
 
 }

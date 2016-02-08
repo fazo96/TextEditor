@@ -44,13 +44,13 @@ public class AddOperation extends Operation {
         if(index == base.length()) return base + text;
         String s = base.substring(0, index) + text;
         if (base.length() > index) {
-            s += base.substring(index + text.length());
+            s += base.substring(index);
         }
         return s;
     }
 
     @Override
-    protected Operation doRebaseOn(Operation newBase) {// Do the actual rebase
+    protected Operation doRebaseOn(Operation newBase) {
         if (newBase instanceof NullOperation) {
             return new AddOperation(index, text, newBase);
         }
@@ -58,6 +58,8 @@ public class AddOperation extends Operation {
             AddOperation ao = (AddOperation) newBase;
             if (ao.index <= index) {
                 return new AddOperation(index + ao.text.length(), text, newBase);
+            } else {
+                return new AddOperation(index, text, newBase);
             }
         } else if (newBase instanceof DelOperation) {
             DelOperation del = (DelOperation) newBase;

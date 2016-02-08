@@ -30,8 +30,7 @@ public class OperationConverter {
         String s = c + "|" + o.getName() + '|';
         if (o instanceof AddOperation) {
             s += ((AddOperation) o).getIndex() + "|" + ((AddOperation) o).getText();
-        }
-        if (o instanceof DelOperation) {
+        } else if (o instanceof DelOperation) {
             s += ((DelOperation) o).getStart() + " " + ((DelOperation) o).getEnd() + "|";
         }
         return s;
@@ -40,17 +39,20 @@ public class OperationConverter {
     public static Operation read(String s, Operation stack) {
         String ss[] = s.split("\\|", 4);
         int basen = Integer.parseInt(ss[0]);
-        Operation base;
+        Operation base = null;
         if (basen == 0) {
             // Base is a null operation
             base = null;
-        } else { // Find base
+        } else if (stack != null) { // Find base
             base = stack.find(basen);
             if (base == null) {
                 // Couldnt find base
                 System.err.println("Could not find base");
                 return null;
             }
+        } else {
+            System.err.println("Operation unreadable: missing stack");
+            return null;
         }
         switch (ss[1]) {
             case "ADD":

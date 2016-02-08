@@ -1,11 +1,18 @@
+package gui;
+
+import net.Connection;
+import net.Server;
+
 /**
  * Entry point and Graphical User Interface
+ *
  * @author fazo
  */
 public class GUI extends javax.swing.JFrame {
-    
+
     private final DocumentManager dm;
-    
+    private Server server;
+
     public GUI() {
         initComponents();
         setTitle("Text Editor");
@@ -24,6 +31,15 @@ public class GUI extends javax.swing.JFrame {
         ContainerPanel = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         textArea = new javax.swing.JTextArea();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        connectMenuItem = new javax.swing.JMenuItem();
+        hostMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -41,8 +57,56 @@ public class GUI extends javax.swing.JFrame {
         );
         ContainerPanelLayout.setVerticalGroup(
             ContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 279, Short.MAX_VALUE)
         );
+
+        jMenu1.setText("File");
+
+        jMenuItem2.setText("Wipe");
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem2);
+
+        jMenuItem6.setText("Import");
+        jMenu1.add(jMenuItem6);
+
+        jMenuItem5.setText("Export");
+        jMenu1.add(jMenuItem5);
+
+        jMenuItem1.setText("Exit");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem1);
+
+        jMenuBar1.add(jMenu1);
+
+        jMenu2.setText("Network");
+
+        connectMenuItem.setText("Connect");
+        connectMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                connectMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu2.add(connectMenuItem);
+
+        hostMenuItem.setText("Host");
+        hostMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                hostMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu2.add(hostMenuItem);
+
+        jMenuBar1.add(jMenu2);
+
+        setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -57,6 +121,36 @@ public class GUI extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        System.exit(0);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        dm.wipe();
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private void hostMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostMenuItemActionPerformed
+        if (server == null) {
+            textArea.setEditable(false);
+            dm.setListen(false);
+            textArea.setText("Hosting a server on port 9035.\nConnect with another instance of the program to edit");
+            server = new Server(9035);
+            server.start();
+            hostMenuItem.setText("Stop Hosting");
+        } else {
+            server.stop();
+            server = null;
+            textArea.setEditable(true);
+            textArea.setText("");
+            dm.setListen(true);
+            hostMenuItem.setText("Host");
+        }
+    }//GEN-LAST:event_hostMenuItemActionPerformed
+
+    private void connectMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectMenuItemActionPerformed
+        dm.linkConnection(new Connection("localhost", 9035));
+    }//GEN-LAST:event_connectMenuItemActionPerformed
 
     /**
      * @param args the command line arguments
@@ -95,6 +189,15 @@ public class GUI extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ContainerPanel;
+    private javax.swing.JMenuItem connectMenuItem;
+    private javax.swing.JMenuItem hostMenuItem;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem5;
+    private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea textArea;
     // End of variables declaration//GEN-END:variables

@@ -23,7 +23,7 @@ public class NullOperation extends Operation {
     }
 
     @Override
-    protected void applyTo(Document d) {
+    public void applyTo(Document d) {
     }
 
     @Override
