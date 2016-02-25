@@ -108,14 +108,24 @@ public class DocumentManager implements DocumentListener {
             listen = true;
         }
     }
+    
+    public void resetTo(Operation o){
+        wipe();
+        apply(o);
+    }
 
     public void linkConnection(Connection c) {
         this.conn = c;
     }
 
+    public void unlinkConnection(){
+        this.conn = null;
+    }
+    
     public void wipe() {
         if (latest != null) {
             apply(new DelOperation(0, latest.evaluate().length(), latest));
+            latest = null;
         }
     }
 

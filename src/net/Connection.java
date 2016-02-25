@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import operations.AddOperation;
 import operations.Operation;
 
 /**
@@ -28,7 +29,7 @@ public class Connection implements Runnable {
         try {
             s = new Socket(address, port);
         } catch (IOException ex) {
-            Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("Connection Failed: " + ex);
             s = null;
             running = false;
             return;
@@ -56,7 +57,7 @@ public class Connection implements Runnable {
             } catch (IOException ex) {
                 Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
             }
-            sendStack();
+            sendSync();
         } else {
             try {
                 System.out.println("NET - Init OIS...");
@@ -69,23 +70,17 @@ public class Connection implements Runnable {
                 Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        running = true;
         receiver = new Thread(this);
         receiver.start();
     }
 
-    private void sendStack() {
-        if (!isServer()) {
-            return;
-        }
-        System.out.println("NET - Sending Full Stack");
-        if (server.getStack() == null) {
-            System.out.println("Can't send null object");
+    private void sendSync() {
+        System.out.println("OUT --> (SYNC)");
+        if (getStack() == null) {
+            System.out.println("SYNC | ");
         } else {
-            try {
-                oos.writeObject(server.getStack());
-            } catch (IOException ex) {
-                Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            send("SYNC | " + getStack().evaluate());
         }
     }
 
@@ -93,7 +88,7 @@ public class Connection implements Runnable {
         if (s == null) {
             System.out.println("Can't send null string");
         } else {
-            System.out.println("NET - Writing String to socket:\n" + s);
+            System.out.println("OUT --> " + s);
             try {
                 oos.writeObject(s);
             } catch (IOException ex) {
@@ -110,11 +105,10 @@ public class Connection implements Runnable {
         if (isClient()) {
             System.out.println("Processing " + (isLocalUpdate ? "local" : "remote") + " update:");
             if (isLocalUpdate) {
-                System.out.println("CONN: Sending base stack operation to server...");
                 send(OperationConverter.convert(newStack));
             }
         } else {
-            System.out.println("SERVER: updating stack from client");
+            System.out.println("IN <-- (Stack)");
             server.update(newStack, this);
         }
         if (dm != null) {
@@ -133,6 +127,10 @@ public class Connection implements Runnable {
                 //Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
                 System.out.println("A client closed the connection");
                 running = false;
+                return;
+            }
+            if (!running) {
+                return;
             }
             if (o == null) {
                 try {
@@ -141,19 +139,45 @@ public class Connection implements Runnable {
                     Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (o instanceof String) {
-                System.out.println("NET - String Incoming:\n" + ((String) o));
-                Operation recv = OperationConverter.read((String) o, isServer() ? server.getStack() : dm.getStack());
-                if (recv == null) {
-                    System.out.println("Could not undestand operation: " + ((String) o));
+                String s = (String) o;
+                System.out.println("IN <--" + s);
+                if (s.startsWith("SYNCREQ")) {
+                    sendSync();
+                } else if (s.startsWith("SYNC | ")) {
+                    // TODO: Handle Sync
+                    if (isServer()) {
+                        System.err.println("Received SYNC on server. This should not happen");
+                    } else {
+                        dm.resetTo(new AddOperation(0, s.substring("SYNC | ".length()), null));
+                    }
                 } else {
-                    System.out.println("NET - Decoded Operation successfully");
-                    update(recv, false);
+                    Operation recv = OperationConverter.read(s, getStack());
+                    if (recv == null) {
+                        System.out.println("Could not undestand operation: " + s);
+                    } else {
+                        System.out.println("NET - Decoded Operation successfully");
+                        update(recv, false);
+                    }
                 }
             } else if (o instanceof Operation) {
-                System.out.println("NET - Received Operation from socket");
-                update((Operation) o, false);
+                System.out.println("IN <-- Operation");
+                System.err.println("Receiving Operation instances is not supported anymore. This should not happen");
+                // update((Operation) o, false);
             }
         }
+    }
+
+    public void close() {
+        running = false;
+        try {
+            s.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public Operation getStack() {
+        return isServer() ? server.getStack() : dm.getStack();
     }
 
     public boolean isServer() {
@@ -162,5 +186,17 @@ public class Connection implements Runnable {
 
     public boolean isClient() {
         return server == null;
+    }
+
+    public boolean isOnline() {
+        return running;
+    }
+
+    public String getAddress() {
+        return s.getInetAddress().getHostName();
+    }
+
+    public int getPort() {
+        return s.getPort();
     }
 }

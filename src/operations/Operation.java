@@ -28,6 +28,7 @@ public abstract class Operation implements Serializable {
             String base;
             if (previous != null) {
                 base = previous.evaluate();
+                previous.clearCache();
             } else {
                 base = "";
             }
@@ -53,6 +54,7 @@ public abstract class Operation implements Serializable {
         } else {
             if (previous != null) {
                 previous.build(d);
+                previous.clearCache();
             }
             applyTo(d);
             try {
@@ -122,16 +124,18 @@ public abstract class Operation implements Serializable {
             System.err.println("REBASE: Success, unnecessary rebase");
             return this;
         }/* else if (newBase.getPrevious() == getPrevious()) {
-            // Do the actual rebase operation
-            return doRebaseOn(newBase);
-        } else if (newBase.getPrevious() == null && getPrevious() != null) {
-            // Travel back my history (REVIEW THIS)
-            return this.copy().rebaseOn(getPrevious().rebaseOn(newBase));
-        } else if (newBase.getPrevious() != null && getPrevious() != null && newBase.getPrevious() != getPrevious()) {
-            // Travel back newbase's history (REVIEW THIS)
-            return this.copy().rebaseOn(newBase.getPrevious(), newBase).rebaseOn(newBase);
-        }*/
+         // Do the actual rebase operation
+         return doRebaseOn(newBase);
+         } else if (newBase.getPrevious() == null && getPrevious() != null) {
+         // Travel back my history (REVIEW THIS)
+         return this.copy().rebaseOn(getPrevious().rebaseOn(newBase));
+         } else if (newBase.getPrevious() != null && getPrevious() != null && newBase.getPrevious() != getPrevious()) {
+         // Travel back newbase's history (REVIEW THIS)
+         return this.copy().rebaseOn(newBase.getPrevious(), newBase).rebaseOn(newBase);
+         }*/
+
         // Impossible rebase
+
         System.err.println("REBASE: Failed");
         return null;
     }
@@ -211,6 +215,14 @@ public abstract class Operation implements Serializable {
             return false;
         }
         return previous.contains(o);
+    }
+
+    /**
+     * Clears the cache. Used internally to save memory when evaluating long
+     * lists of operations
+     */
+    private void clearCache() {
+        cache = null;
     }
 
     public Operation getPrevious() {

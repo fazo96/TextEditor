@@ -1,5 +1,6 @@
 package gui;
 
+import javax.swing.JOptionPane;
 import net.Connection;
 import net.Server;
 
@@ -12,6 +13,7 @@ public class GUI extends javax.swing.JFrame {
 
     private final DocumentManager dm;
     private Server server;
+    private Connection c;
 
     public GUI() {
         initComponents();
@@ -31,6 +33,7 @@ public class GUI extends javax.swing.JFrame {
         ContainerPanel = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         textArea = new javax.swing.JTextArea();
+        statusLabel = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -49,15 +52,21 @@ public class GUI extends javax.swing.JFrame {
         textArea.setWrapStyleWord(true);
         jScrollPane1.setViewportView(textArea);
 
+        statusLabel.setText("Offline");
+
         javax.swing.GroupLayout ContainerPanelLayout = new javax.swing.GroupLayout(ContainerPanel);
         ContainerPanel.setLayout(ContainerPanelLayout);
         ContainerPanelLayout.setHorizontalGroup(
             ContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addComponent(statusLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ContainerPanelLayout.setVerticalGroup(
             ContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 279, Short.MAX_VALUE)
+            .addGroup(ContainerPanelLayout.createSequentialGroup()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 259, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(statusLabel))
         );
 
         jMenu1.setText("File");
@@ -137,19 +146,37 @@ public class GUI extends javax.swing.JFrame {
             textArea.setText("Hosting a server on port 9035.\nConnect with another instance of the program to edit");
             server = new Server(9035);
             server.start();
+            statusLabel.setText("Hosting - Port 9035");
             hostMenuItem.setText("Stop Hosting");
         } else {
             server.stop();
             server = null;
             textArea.setEditable(true);
             textArea.setText("");
+            statusLabel.setText("Offline");
             dm.setListen(true);
             hostMenuItem.setText("Host");
         }
     }//GEN-LAST:event_hostMenuItemActionPerformed
 
     private void connectMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectMenuItemActionPerformed
-        dm.linkConnection(new Connection("localhost", 9035, dm));
+        if (c == null) {
+            statusLabel.setText("Connecting");
+            c = new Connection("localhost", 9035, dm);
+            dm.linkConnection(c);
+            if (c.isOnline()) {
+                statusLabel.setText("Online - Connected to " + c.getAddress() + ":" + c.getPort());
+                connectMenuItem.setText("Disconnect");
+            } else {
+                JOptionPane.showMessageDialog(this, "Connection failed", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            dm.unlinkConnection();
+            c.close();
+            c = null;
+            connectMenuItem.setText("Connect");
+            statusLabel.setText("Offline");
+        }
     }//GEN-LAST:event_connectMenuItemActionPerformed
 
     /**
@@ -199,6 +226,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel statusLabel;
     private javax.swing.JTextArea textArea;
     // End of variables declaration//GEN-END:variables
 }
