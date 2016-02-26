@@ -108,66 +108,6 @@ public abstract class Operation implements Serializable {
         }
     }
 
-    protected Operation rebaseOn(Operation newBase, Operation origNewBase) {
-        if (newBase == this) {
-            System.err.println("REBASE: Success, null operation");
-            return new NullOperation(previous);
-        } else if (newBase == getPrevious()) {
-            // Unnecessary rebase
-            System.err.println("REBASE: Success, unnecessary rebase");
-            return this;
-        }/* else if (newBase.getPrevious() == getPrevious()) {
-         // Do the actual rebase operation
-         return doRebaseOn(newBase);
-         } else if (newBase.getPrevious() == null && getPrevious() != null) {
-         // Travel back my history (REVIEW THIS)
-         return this.copy().rebaseOn(getPrevious().rebaseOn(newBase));
-         } else if (newBase.getPrevious() != null && getPrevious() != null && newBase.getPrevious() != getPrevious()) {
-         // Travel back newbase's history (REVIEW THIS)
-         return this.copy().rebaseOn(newBase.getPrevious(), newBase).rebaseOn(newBase);
-         }*/
-
-        // Impossible rebase
-
-        System.err.println("REBASE: Failed");
-        return null;
-    }
-
-    /**
-     * Returns a copy of this Operation adapted to be applied on a different
-     * operation or null when not possible.
-     *
-     * @param newBase the new base of the Operation
-     * @return an equivalent operation to this one, but adapted to be applied on
-     * top of newBase or null when not possible
-     */
-    public Operation rebaseOn(Operation newBase) {
-        return this.rebaseOn(newBase, newBase);
-    }
-
-    protected abstract Operation doRebaseOn(Operation newBase);
-
-    /**
-     * Returns an operation that combines two of them if possible, and null
-     * otherwise
-     *
-     * @param next the operation to merge with
-     * @return an operation equivalent to this one and the next one, or null if
-     * they can't be merged
-     */
-    public Operation merge(Operation next) {
-        if (next.getPrevious() != this) {
-            // Maybe shouldn't do this... but oh well
-            next = next.rebaseOn(this);
-            if (next == null) {
-                return null;
-            }
-        }
-        return doMerge(next);
-    }
-
-    protected abstract Operation doMerge(Operation next);
-
     /**
      * An identical copy of this Operation but which maintains the same
      * reference to its previous.
@@ -185,6 +125,10 @@ public abstract class Operation implements Serializable {
      */
     public int checksum() {
         return evaluate().hashCode();
+    }
+
+    public boolean isValidUpdate(Operation o) {
+        return o.getPrevious() == this;
     }
 
     public Operation find(int checksum) {

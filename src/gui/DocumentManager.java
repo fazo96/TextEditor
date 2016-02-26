@@ -5,6 +5,7 @@ import operations.AddOperation;
 import operations.DelOperation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -93,18 +94,16 @@ public class DocumentManager implements DocumentListener, OperationApplier {
             if (latest == null) {
                 o.build(this);
                 latest = o;
-            } else {
-                Operation rebased = o.rebaseOn(latest);
-                if (rebased == null) {
-                    System.out.println("FATAL: rebase failed");
-                } else {
-                    try {
-                        rebased.apply(this, latest);
-                    } catch (Exception ex) {
-                        Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    latest = rebased;
+            } else if (latest.isValidUpdate(o)) {
+                try {
+                    o.apply(this, latest);
+                    latest = o;
+                } catch (Exception ex) {
+                    Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog(null, "Error when applying operation to document:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
                 }
+            } else {
+                JOptionPane.showMessageDialog(null, "Error when applying operation to document:\nUpdate was not valid", "Error", JOptionPane.ERROR_MESSAGE);
             }
             listen = true;
         }

@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import operations.Operation;
 
 /**
@@ -41,10 +42,13 @@ public class Server implements Runnable {
     }
 
     public void stop() {
-        stopThread = true;
-        if (thread != null) {
-            thread.interrupt(); // TODO: check effects of this
+        try {
+            ss.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
+        stopThread = true;
+        connections.forEach(Connection::close);
     }
 
     public Operation update(Operation newStack) {
@@ -58,17 +62,15 @@ public class Server implements Runnable {
                 dm.clear();
                 dm.apply(stack);
             }
-        } else {
-            Operation rebased = newStack.rebaseOn(stack);
-            if (rebased == null) {
-                System.out.println("FATAL: update failed");
-            } else {
-                System.out.println("NET - successfully updated stack");
-                stack = rebased;
-                if (dm != null) {
-                    dm.apply(stack);
-                }
+        } else if (stack.isValidUpdate(newStack)) {
+            stack = newStack;
+            if (dm != null) {
+                dm.apply(stack);
             }
+        } else {
+            // Client sent invalid update!
+            System.err.println("Client sent an invalid update!");
+            source.sendSync();
         }
         sendToAllExcept(OperationConverter.convert(stack), source);
         return stack;
@@ -85,13 +87,10 @@ public class Server implements Runnable {
             try {
                 connections.add(new Connection(ss.accept(), this));
             } catch (Exception ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                if (!stopThread) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-        }
-        try {
-            ss.close();
-        } catch (IOException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

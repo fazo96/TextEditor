@@ -20,6 +20,8 @@ import operations.AddOperation;
  */
 public class GUI extends javax.swing.JFrame {
 
+    private static GUI gui;
+    
     private final DocumentManager dm;
     private Server server;
     private Connection c;
@@ -29,6 +31,7 @@ public class GUI extends javax.swing.JFrame {
 
     public GUI() {
         initComponents();
+        gui = this;
         setTitle("Text Editor");
         dm = new DocumentManager(textArea.getDocument());
         fc = new JFileChooser();
@@ -198,27 +201,30 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_hostMenuItemActionPerformed
 
     private void connectMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectMenuItemActionPerformed
-        connectUI.setVisible(true);
-        connectUI.requestFocus();
-    }//GEN-LAST:event_connectMenuItemActionPerformed
-
-    public void connect(String hostname, int port) {
-        if (c == null) {
-            statusLabel.setText("Connecting");
-            c = new Connection(hostname, port, dm);
-            dm.linkConnection(c);
-            if (c.isOnline()) {
-                statusLabel.setText("Online - Connected to " + c.getAddress() + ":" + c.getPort());
-                connectMenuItem.setText("Disconnect");
-            } else {
-                JOptionPane.showMessageDialog(this, "Connection failed", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
+        if (c == null) { // Is currently disconnected
+            connectUI.setVisible(true);
+            connectUI.requestFocus();
+        } else { // Is currently connected
             dm.unlinkConnection();
             c.close();
             c = null;
             connectMenuItem.setText("Connect");
             statusLabel.setText("Offline");
+        }
+    }//GEN-LAST:event_connectMenuItemActionPerformed
+
+    public void connect(String hostname, int port) {
+        if (c != null) {
+            c.close();
+        }
+        statusLabel.setText("Connecting");
+        c = new Connection(hostname, port, dm);
+        dm.linkConnection(c);
+        if (c.isOnline()) {
+            statusLabel.setText("Online - Connected to " + c.getAddress() + ":" + c.getPort());
+            connectMenuItem.setText("Disconnect");
+        } else {
+            JOptionPane.showMessageDialog(this, "Connection failed", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -257,6 +263,10 @@ public class GUI extends javax.swing.JFrame {
         serverSettings.requestFocus();
     }//GEN-LAST:event_settingsButtonActionPerformed
 
+    public static GUI get(){
+        return gui;
+    }
+    
     /**
      * @param args the command line arguments
      */

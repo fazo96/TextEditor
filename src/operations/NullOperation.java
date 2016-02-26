@@ -25,16 +25,6 @@ public class NullOperation extends Operation {
     }
 
     @Override
-    protected Operation doRebaseOn(Operation newBase) {
-        return new NullOperation(newBase);
-    }
-
-    @Override
-    protected Operation doMerge(Operation next) {
-        return next;
-    }
-
-    @Override
     protected Operation copy() {
         return new NullOperation(getPrevious());
     }

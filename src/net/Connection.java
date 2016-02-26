@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import operations.AddOperation;
 import operations.Operation;
 
@@ -75,7 +76,7 @@ public class Connection implements Runnable {
         receiver.start();
     }
 
-    private void sendSync() {
+    public void sendSync() {
         System.out.println("OUT --> (SYNC)");
         if (getStack() == null) {
             System.out.println("SYNC | ");
@@ -124,10 +125,13 @@ public class Connection implements Runnable {
             try {
                 o = ois.readObject();
             } catch (Exception ex) {
-                //Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
-                System.out.println("A client closed the connection");
-                running = false;
-                return;
+                if (isServer()) {
+                    System.out.println("A client closed the connection");
+                } else {
+                    running = false;
+                    JOptionPane.showMessageDialog(null, "Connection to the server closed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
             if (!running) {
                 return;
