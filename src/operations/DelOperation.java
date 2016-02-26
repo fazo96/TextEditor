@@ -30,7 +30,7 @@ public class DelOperation extends Operation {
     public void applyTo(OperationApplier d) {
         // Delete
         try {
-            d.remove(start, end - start);
+            d.remove(start, end);
         } catch (Exception ex) {
             System.err.println("Could not apply DelOperation to OperationApplier:\nOperationApplier is " + d.getText().length() + " chars long\nOperation deletes " + (end-start) + " chars from " + start + "\n" + ex);
         }

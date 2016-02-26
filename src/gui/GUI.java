@@ -1,7 +1,5 @@
 package gui;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.logging.Level;
@@ -183,7 +181,7 @@ public class GUI extends javax.swing.JFrame {
         if (server == null) {
             textArea.setEditable(false);
             dm.setListen(false);
-            server = new Server(serverSettings.getPort());
+            server = new Server(serverSettings.getPort(), dm);
             server.start();
             textArea.setText("Hosting a server on port " + server.getPort() + ".\nConnect with another instance of the program to edit");
             statusLabel.setText("Hosting - Port " + server.getPort());

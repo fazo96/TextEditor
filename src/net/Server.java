@@ -1,9 +1,9 @@
 package net;
 
+import gui.DocumentManager;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import operations.Operation;
@@ -20,9 +20,11 @@ public class Server implements Runnable {
     private Thread thread;
     private Operation stack;
     private ArrayList<Connection> connections;
+    private DocumentManager dm;
 
-    public Server(int port) {
+    public Server(int port, DocumentManager dm) {
         connections = new ArrayList<>();
+        this.dm = dm;
         this.port = port;
         try {
             ss = new ServerSocket(port);
@@ -44,14 +46,18 @@ public class Server implements Runnable {
             thread.interrupt(); // TODO: check effects of this
         }
     }
-    
-    public Operation update(Operation newStack){
+
+    public Operation update(Operation newStack) {
         return update(newStack, null);
     }
 
     public Operation update(Operation newStack, Connection source) {
         if (stack == null) {
             stack = newStack;
+            if (dm != null) {
+                dm.clear();
+                dm.apply(stack);
+            }
         } else {
             Operation rebased = newStack.rebaseOn(stack);
             if (rebased == null) {
@@ -59,6 +65,9 @@ public class Server implements Runnable {
             } else {
                 System.out.println("NET - successfully updated stack");
                 stack = rebased;
+                if (dm != null) {
+                    dm.apply(stack);
+                }
             }
         }
         sendToAllExcept(OperationConverter.convert(stack), source);
