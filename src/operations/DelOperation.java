@@ -1,10 +1,5 @@
 package operations;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -32,12 +27,12 @@ public class DelOperation extends Operation {
     }
 
     @Override
-    public void applyTo(Document d) {
+    public void applyTo(OperationApplier d) {
         // Delete
         try {
             d.remove(start, end - start);
-        } catch (BadLocationException ex) {
-            System.err.println("Could not apply DelOperation to Document:\nDocument is " + d.getLength() + " chars long\nOperation deletes " + (end-start) + " chars from " + start + "\n" + ex);
+        } catch (Exception ex) {
+            System.err.println("Could not apply DelOperation to OperationApplier:\nOperationApplier is " + d.getText().length() + " chars long\nOperation deletes " + (end-start) + " chars from " + start + "\n" + ex);
         }
     }
 

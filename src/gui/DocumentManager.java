@@ -11,6 +11,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.Connection;
 import net.OperationConverter;
+import operations.OperationApplier;
 
 /**
  * The bridge between Java's Document and Operations.
@@ -19,7 +20,7 @@ import net.OperationConverter;
  *
  * @author fazo
  */
-public class DocumentManager implements DocumentListener {
+public class DocumentManager implements DocumentListener, OperationApplier {
 
     private Operation latest = null;
     private Document doc;
@@ -90,7 +91,7 @@ public class DocumentManager implements DocumentListener {
         if (latest != o) {
             listen = false;
             if (latest == null) {
-                o.build(doc);
+                o.build(this);
                 latest = o;
             } else {
                 Operation rebased = o.rebaseOn(latest);
@@ -98,7 +99,7 @@ public class DocumentManager implements DocumentListener {
                     System.out.println("FATAL: rebase failed");
                 } else {
                     try {
-                        rebased.apply(doc, latest);
+                        rebased.apply(this, latest);
                     } catch (Exception ex) {
                         Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -108,8 +109,8 @@ public class DocumentManager implements DocumentListener {
             listen = true;
         }
     }
-    
-    public void resetTo(Operation o){
+
+    public void resetTo(Operation o) {
         wipe();
         apply(o);
     }
@@ -118,10 +119,10 @@ public class DocumentManager implements DocumentListener {
         this.conn = c;
     }
 
-    public void unlinkConnection(){
+    public void unlinkConnection() {
         this.conn = null;
     }
-    
+
     public void wipe() {
         if (latest != null) {
             apply(new DelOperation(0, latest.evaluate().length(), latest));
@@ -143,6 +144,38 @@ public class DocumentManager implements DocumentListener {
 
     public void setListen(boolean listen) {
         this.listen = listen;
+    }
+
+    // OperationApplier implementation
+    @Override
+    public void insert(int offset, String s) throws Exception {
+        doc.insertString(offset, s, null);
+    }
+
+    @Override
+    public void remove(int from, int to) throws Exception {
+        doc.remove(from, to - from);
+    }
+
+    @Override
+    public void clear() {
+        try {
+            doc.remove(0, doc.getLength());
+        } catch (BadLocationException ex) {
+            // Should never happen
+            Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public String getText() {
+        try {
+            return doc.getText(0, doc.getLength());
+        } catch (BadLocationException ex) {
+            // Should never happen
+            Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
 
 }

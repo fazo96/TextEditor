@@ -5,8 +5,6 @@
  */
 package operations;
 
-import javax.swing.text.Document;
-
 /**
  *
  * @author fazo
@@ -23,7 +21,7 @@ public class NullOperation extends Operation {
     }
 
     @Override
-    public void applyTo(Document d) {
+    public void applyTo(OperationApplier d) {
     }
 
     @Override

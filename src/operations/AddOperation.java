@@ -2,8 +2,6 @@ package operations;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 
 /**
  *
@@ -28,11 +26,11 @@ public class AddOperation extends Operation {
     }
 
     @Override
-    public void applyTo(Document d) {
+    public void applyTo(OperationApplier d) {
         try {
-            d.insertString(index, text, null);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
+            d.insert(index, text);
+        } catch (Exception ex) {
+            Logger.getLogger(AddOperation.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -41,7 +39,9 @@ public class AddOperation extends Operation {
         System.out.println("- ADD\nINDEX: " + index);
         System.out.println("LEN: " + text.length());
         System.out.println("BASE: " + base);
-        if(index == base.length()) return base + text;
+        if (index == base.length()) {
+            return base + text;
+        }
         String s = base.substring(0, index) + text;
         if (base.length() > index) {
             s += base.substring(index);

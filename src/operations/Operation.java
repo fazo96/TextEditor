@@ -3,8 +3,6 @@ package operations;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 
 /**
  * A transformation applied to an empty string or to another transformation
@@ -39,16 +37,16 @@ public abstract class Operation implements Serializable {
     }
 
     /**
-     * Takes an empty document and builds the text into it.
+     * Builds the result text of this operation using the given OperationApplier
      *
-     * @param d an empty document
+     * @param d a new operation applier
      */
-    public void build(Document d) {
+    public void build(OperationApplier d) {
         if (cache != null) {
+            d.clear();
             try {
-                d.remove(0, d.getLength());
-                d.insertString(0, cache, null);
-            } catch (BadLocationException ex) {
+                d.insert(0, cache);
+            } catch (Exception ex) {
                 Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
@@ -57,12 +55,7 @@ public abstract class Operation implements Serializable {
                 previous.clearCache();
             }
             applyTo(d);
-            try {
-                cache = d.getText(0, d.getLength());
-            } catch (BadLocationException ex) {
-                Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
-                cache = null;
-            }
+            cache = d.getText();
         }
 
     }
@@ -91,16 +84,16 @@ public abstract class Operation implements Serializable {
      *
      * @param d the document on which to apply this operation
      */
-    public abstract void applyTo(Document d);
+    public abstract void applyTo(OperationApplier d);
 
     /**
      * Applies all Operations that are after the lastApplied argument.
      *
-     * @param d the document to apply to
+     * @param d the OperationApplier to apply to
      * @param lastApplied the last applied operation to the document
      * @throws Exception if lastApplied is not in the operation stack
      */
-    public void apply(Document d, Operation lastApplied) throws Exception {
+    public void apply(OperationApplier d, Operation lastApplied) throws Exception {
         if (previous == null && lastApplied != null) {
             throw new Exception("lastApplied Operation was not in stack");
         }
@@ -185,9 +178,9 @@ public abstract class Operation implements Serializable {
 
     /**
      * Returns a code that uniquely identifies this operation by its result
-     * 
+     *
      * TODO: Reimplement this using MD5, SHA or something!
-     * 
+     *
      * @return a checksum
      */
     public int checksum() {
