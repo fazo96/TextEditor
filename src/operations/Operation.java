@@ -183,6 +183,13 @@ public abstract class Operation implements Serializable {
      */
     protected abstract Operation copy();
 
+    /**
+     * Returns a code that uniquely identifies this operation by its result
+     * 
+     * TODO: Reimplement this using MD5, SHA or something!
+     * 
+     * @return a checksum
+     */
     public int checksum() {
         return evaluate().hashCode();
     }

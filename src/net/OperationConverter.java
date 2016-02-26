@@ -11,8 +11,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import operations.AddOperation;
 import operations.DelOperation;
 import operations.NullOperation;
@@ -80,25 +88,35 @@ public class OperationConverter {
         return null;
     }
 
-    public void save(Operation o, File f) {
+    /**
+     * Saves the result of a given Operation to a given File in text format.
+     *
+     * @param o the operation to save
+     * @param f the destination file
+     * @throws java.lang.Exception if the operation was not successfull
+     */
+    public static void save(Operation o, File f) throws Exception {
         try {
             PrintWriter writer = new PrintWriter(f, "UTF-8");
             writer.write(o.evaluate());
-            writer.close();
-        } catch (Exception ex) {
-            Logger.getLogger(OperationConverter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+            throw ex;
         }
     }
 
-    public String load(File f) {
+    /**
+     * Reads a text File and returns the contents as a String.
+     *
+     * @param f the file to read
+     * @return the string contained in the file
+     * @throws java.io.FileNotFoundException if the operation was not successfull
+     */
+    public static String load(File f) throws FileNotFoundException {
         try {
             BufferedReader bf = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-            StringBuilder sb = new StringBuilder();
-            bf.lines().forEach((String s) -> sb.append(s).append('\n'));
-            return sb.toString();
+            return bf.lines().collect(Collectors.joining("\n"));
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(OperationConverter.class.getName()).log(Level.SEVERE, null, ex);
+            throw ex;
         }
-        return null;
     }
 }
