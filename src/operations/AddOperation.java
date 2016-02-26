@@ -36,9 +36,6 @@ public class AddOperation extends Operation {
 
     @Override
     protected String applyThis(String base) {
-        System.out.println("- ADD\nINDEX: " + index);
-        System.out.println("LEN: " + text.length());
-        System.out.println("BASE: " + base);
         if (index == base.length()) {
             return base + text;
         }

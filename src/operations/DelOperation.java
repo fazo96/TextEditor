@@ -38,7 +38,6 @@ public class DelOperation extends Operation {
 
     @Override
     protected String applyThis(String base) {
-        System.out.println("- DEL\nSTART: " + start + "\nEND:" + end + "\nLEN: " + base.length() + "\nBASE: " + base);
         if (start == 0) {
             if (end == base.length()) {
                 return "";

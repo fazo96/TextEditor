@@ -146,12 +146,14 @@ public class Connection implements Runnable {
                 String s = (String) o;
                 System.out.println("IN <--" + s);
                 if (s.startsWith("SYNCREQ")) {
+                    System.out.println("Received SYNCREQ. Sending SYNC now");
                     sendSync();
                 } else if (s.startsWith("SYNC | ")) {
                     // TODO: Handle Sync
                     if (isServer()) {
-                        System.err.println("Received SYNC on server. This should not happen");
+                        System.err.println("Received SYNC on server. This should not happen.");
                     } else {
+                        System.out.println("Received SYNC. Resyncing documentt");
                         dm.resetTo(new AddOperation(0, s.substring("SYNC | ".length()), null));
                     }
                 } else {
@@ -159,14 +161,11 @@ public class Connection implements Runnable {
                     if (recv == null) {
                         System.out.println("Could not undestand operation: " + s);
                     } else {
-                        System.out.println("NET - Decoded Operation successfully");
                         update(recv, false);
                     }
                 }
-            } else if (o instanceof Operation) {
-                System.out.println("IN <-- Operation");
-                System.err.println("Receiving Operation instances is not supported anymore. This should not happen");
-                // update((Operation) o, false);
+            } else {
+                System.err.println("Unknown Object received.");
             }
         }
     }

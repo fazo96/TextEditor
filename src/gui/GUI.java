@@ -236,8 +236,7 @@ public class GUI extends javax.swing.JFrame {
             String s;
             try {
                 s = OperationConverter.load(f);
-                dm.wipe();
-                dm.apply(new AddOperation(0, s, null));
+                dm.resetTo(new AddOperation(0, s, null));
             } catch (FileNotFoundException ex) {
                 JOptionPane.showMessageDialog(this, "Load Operation failed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
             }
