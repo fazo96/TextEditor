@@ -12,6 +12,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.Connection;
 import net.OperationConverter;
+import net.StackProvider;
 import operations.OperationApplier;
 
 /**
@@ -21,32 +22,18 @@ import operations.OperationApplier;
  *
  * @author fazo
  */
-public class DocumentManager implements DocumentListener, OperationApplier {
+public class DocumentManager implements DocumentListener, OperationApplier, StackProvider {
 
     private Operation latest = null;
     private Document doc;
     private Connection conn;
     private boolean listen = true;
 
-    private void debug() {
-        if (latest != null) {
-            String s;
-            System.out.println("\n---\n");
-            System.out.println(s = OperationConverter.convert(latest));
-            latest = OperationConverter.read(s, latest.getPrevious());
-            System.out.println(OperationConverter.convert(latest));
-            System.out.println("RESULT: " + latest.evaluate());
-        } else {
-            System.out.println("Nothing to debug");
-        }
-    }
-
+    // Start document listener implementation
+    
     @Override
     public void insertUpdate(DocumentEvent de) {
-        if (!listen) {
-            return;
-        }
-        if (de.getType() == DocumentEvent.EventType.INSERT) {
+        if (listen && de.getType() == DocumentEvent.EventType.INSERT) {
             String what = "";
             try {
                 what = de.getDocument().getText(de.getOffset(), de.getLength());
@@ -60,10 +47,7 @@ public class DocumentManager implements DocumentListener, OperationApplier {
 
     @Override
     public void removeUpdate(DocumentEvent de) {
-        if (!listen) {
-            return;
-        }
-        if (de.getType() == DocumentEvent.EventType.REMOVE) {
+        if (listen && de.getType() == DocumentEvent.EventType.REMOVE) {
             latest = new DelOperation(de.getOffset(), de.getLength() + de.getOffset(), latest);
             sendViaConnection();
         }
@@ -71,8 +55,10 @@ public class DocumentManager implements DocumentListener, OperationApplier {
 
     @Override
     public void changedUpdate(DocumentEvent de) {
-        // Java's PlainDocument doesn't emit changedUpdate events
+        // Java's PlainDocument (used in text areas) doesn't emit changedUpdate events
     }
+    
+    // End document listener implementation
 
     private void sendViaConnection() {
         if (conn != null) {
@@ -86,10 +72,7 @@ public class DocumentManager implements DocumentListener, OperationApplier {
     }
 
     public void apply(Operation o) {
-        if (o == null) {
-            return;
-        }
-        if (latest != o) {
+        if (o != null && latest != o) {
             listen = false;
             if (latest == null) {
                 o.build(this);
@@ -129,6 +112,7 @@ public class DocumentManager implements DocumentListener, OperationApplier {
         }
     }
 
+    @Override
     public Operation getStack() {
         return latest;
     }

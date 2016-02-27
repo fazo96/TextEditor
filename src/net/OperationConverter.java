@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net;
 
 import java.io.BufferedReader;
@@ -19,15 +14,21 @@ import operations.NullOperation;
 import operations.Operation;
 
 /**
- * Converts Operations to and from String.
+ * String to/from Operation convertion tools and File I/O tools for Operations.
  *
  * Java's Serialization isn't used because in this case, the fingerprint of the
- * previous operation is used instead of serializing all the stack
+ * previous operation is used instead of serializing every operation in a stack
  *
  * @author fazo
  */
 public class OperationConverter {
 
+    /**
+     * Converts a single operation to a String representation.
+     *
+     * @param o the operation to convert
+     * @return a string representation of the given operation
+     */
     public static String convert(Operation o) {
         int c;
         if (o.getPrevious() != null) {
@@ -44,6 +45,16 @@ public class OperationConverter {
         return s;
     }
 
+    /**
+     * reads an operation in string representation to turn it into an Operation
+     * instance.
+     *
+     * @param s the string to parse
+     * @param stack the stack to look in to find the base for the operation in
+     * string form
+     * @return the resulting Operation or null if the base of the operation was
+     * not found in the stack
+     */
     public static Operation read(String s, Operation stack) {
         String ss[] = s.split("\\|", 4);
         int basen = Integer.parseInt(ss[0]);
@@ -101,7 +112,8 @@ public class OperationConverter {
      *
      * @param f the file to read
      * @return the string contained in the file
-     * @throws java.io.FileNotFoundException if the operation was not successfull
+     * @throws java.io.FileNotFoundException if the operation was not
+     * successfull
      */
     public static String load(File f) throws FileNotFoundException {
         try {

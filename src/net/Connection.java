@@ -1,88 +1,40 @@
 package net;
 
-import gui.DocumentManager;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
-import operations.AddOperation;
 import operations.Operation;
 
 /**
+ * A network connection over a TCP Socket to exchange Operations.
  *
  * @author fazo
  */
-public class Connection implements Runnable {
+public abstract class Connection implements Runnable, StackProvider {
 
-    private Socket s;
-    private ObjectInputStream ois;
-    private ObjectOutputStream oos;
+    protected Socket socket;
+    protected ObjectInputStream ois;
+    protected ObjectOutputStream oos;
     private boolean running;
     private Thread receiver;
-    private Server server;
-    private DocumentManager dm;
+    protected StackProvider sp;
 
-    public Connection(String address, int port, DocumentManager dm) {
-        this.dm = dm;
-        try {
-            s = new Socket(address, port);
-        } catch (IOException ex) {
-            System.err.println("Connection Failed: " + ex);
-            s = null;
-            running = false;
-            return;
-        }
-        init();
+    public Connection(StackProvider sp) {
+        this.sp = sp;
     }
 
-    public Connection(Socket s, Server server) {
-        this.s = s;
-        this.server = server;
-        init();
-    }
-
-    private void init() {
+    /**
+     * Starts receiving messages. This method assumes an already open socket and
+     * correctly initialized Object Streams.
+     */
+    protected void start() {
         System.out.println("NET - Init connection...");
-        running = false;
-        if (isServer()) {
-            try {
-                System.out.println("NET - Init OOS...");
-                oos = new ObjectOutputStream(s.getOutputStream());
-                System.out.println("NET - Done Init OOS...");
-                System.out.println("NET - Init OIS...");
-                ois = new ObjectInputStream(s.getInputStream());
-                System.out.println("NET - Done Init OIS...");
-            } catch (IOException ex) {
-                Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            sendSync();
-        } else {
-            try {
-                System.out.println("NET - Init OIS...");
-                ois = new ObjectInputStream(s.getInputStream());
-                System.out.println("NET - Done Init OIS...");
-                System.out.println("NET - Init OOS...");
-                oos = new ObjectOutputStream(s.getOutputStream());
-                System.out.println("NET - Done Init OOS...");
-            } catch (IOException ex) {
-                Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
         running = true;
         receiver = new Thread(this);
         receiver.start();
-    }
-
-    public void sendSync() {
-        System.out.println("OUT --> (SYNC)");
-        if (getStack() == null) {
-            System.out.println("SYNC | ");
-        } else {
-            send("SYNC | " + getStack().evaluate());
-        }
     }
 
     public void send(String s) {
@@ -99,23 +51,28 @@ public class Connection implements Runnable {
         }
     }
 
-    public void update(Operation newStack, boolean isLocalUpdate) {
-        if (newStack == null) {
-            return;
-        }
-        if (isClient()) {
-            System.out.println("Processing " + (isLocalUpdate ? "local" : "remote") + " update:");
-            if (isLocalUpdate) {
-                send(OperationConverter.convert(newStack));
-            }
-        } else {
-            System.out.println("IN <-- (Stack)");
-            server.update(newStack, this);
-        }
-        if (dm != null) {
-            dm.apply(newStack);
-        }
-    }
+    /**
+     * Called when an Update arrives.
+     *
+     * @param newStack the Update
+     * @param isLocalUpdate wether the Update came from a local source (this
+     * instance of the application) or the network
+     */
+    public abstract void update(Operation newStack, boolean isLocalUpdate);
+
+    /**
+     * Called when the receiving stream breaks.
+     *
+     * @param ex the Java Exception related to the break
+     */
+    protected abstract void onReceiveFail(Exception ex);
+
+    /**
+     * Called when a String arrives from the network.
+     *
+     * @param s the string that arrived
+     */
+    protected abstract void onReceiveString(String s);
 
     @Override
     public void run() {
@@ -125,81 +82,61 @@ public class Connection implements Runnable {
             try {
                 o = ois.readObject();
             } catch (Exception ex) {
-                if (isServer()) {
-                    System.out.println("A client closed the connection");
-                } else {
-                    running = false;
-                    JOptionPane.showMessageDialog(null, "Connection to the server closed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+                onReceiveFail(ex);
             }
             if (!running) {
+                // This is in place in case readObject blocked for too long and
+                // the condition allowing this loop is not true anymore
                 return;
             }
             if (o == null) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(20);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (o instanceof String) {
-                String s = (String) o;
-                System.out.println("IN <--" + s);
-                if (s.startsWith("SYNCREQ")) {
-                    System.out.println("Received SYNCREQ. Sending SYNC now");
-                    sendSync();
-                } else if (s.startsWith("SYNC | ")) {
-                    // TODO: Handle Sync
-                    if (isServer()) {
-                        System.err.println("Received SYNC on server. This should not happen.");
-                    } else {
-                        System.out.println("Received SYNC. Resyncing documentt");
-                        dm.resetTo(new AddOperation(0, s.substring("SYNC | ".length()), null));
-                    }
-                } else {
-                    Operation recv = OperationConverter.read(s, getStack());
-                    if (recv == null) {
-                        System.out.println("Could not undestand operation: " + s);
-                    } else {
-                        update(recv, false);
-                    }
-                }
+                System.out.println("IN <--" + (String) o);
+                onReceiveString((String) o);
             } else {
                 System.err.println("Unknown Object received.");
             }
         }
     }
 
+    /**
+     * Closes this connection: stops sending and receiving
+     */
     public void close() {
         running = false;
         try {
-            s.close();
+            socket.close();
         } catch (IOException ex) {
             Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
+    @Override
     public Operation getStack() {
-        return isServer() ? server.getStack() : dm.getStack();
+        return sp.getStack();
     }
 
-    public boolean isServer() {
-        return server != null;
-    }
-
-    public boolean isClient() {
-        return server == null;
-    }
-
+    /**
+     * @return Wether this connection is estimated to be Online.
+     */
     public boolean isOnline() {
         return running;
     }
 
+    protected void setRunning(boolean r) {
+        this.running = r;
+    }
+
     public String getAddress() {
-        return s.getInetAddress().getHostName();
+        return socket.getInetAddress().getHostName();
     }
 
     public int getPort() {
-        return s.getPort();
+        return socket.getPort();
     }
 }

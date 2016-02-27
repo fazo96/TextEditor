@@ -8,7 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import net.Connection;
+import net.ConnectionToServer;
 import net.OperationConverter;
 import net.Server;
 import operations.AddOperation;
@@ -24,7 +24,7 @@ public class GUI extends javax.swing.JFrame {
     
     private final DocumentManager dm;
     private Server server;
-    private Connection c;
+    private ConnectionToServer connection;
     private final SettingsUI serverSettings;
     private final ConnectUI connectUI;
     private final JFileChooser fc;
@@ -201,27 +201,28 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_hostMenuItemActionPerformed
 
     private void connectMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectMenuItemActionPerformed
-        if (c == null) { // Is currently disconnected
+        if (connection == null) { // Is currently disconnected
             connectUI.setVisible(true);
             connectUI.requestFocus();
         } else { // Is currently connected
             dm.unlinkConnection();
-            c.close();
-            c = null;
+            connection.close();
+            connection = null;
             connectMenuItem.setText("Connect");
             statusLabel.setText("Offline");
         }
     }//GEN-LAST:event_connectMenuItemActionPerformed
 
     public void connect(String hostname, int port) {
-        if (c != null) {
-            c.close();
+        if (connection != null) {
+            connection.close();
         }
         statusLabel.setText("Connecting");
-        c = new Connection(hostname, port, dm);
-        dm.linkConnection(c);
-        if (c.isOnline()) {
-            statusLabel.setText("Online - Connected to " + c.getAddress() + ":" + c.getPort());
+        connection = new ConnectionToServer(hostname, port, dm);
+        connection.start();
+        dm.linkConnection(connection);
+        if (connection.isOnline()) {
+            statusLabel.setText("Online - Connected to " + connection.getAddress() + ":" + connection.getPort());
             connectMenuItem.setText("Disconnect");
         } else {
             JOptionPane.showMessageDialog(this, "Connection failed", "Error", JOptionPane.ERROR_MESSAGE);
