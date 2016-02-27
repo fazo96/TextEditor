@@ -12,7 +12,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import operations.AddOperation;
 import operations.Operation;
 
@@ -22,18 +21,23 @@ import operations.Operation;
  */
 public class ConnectionToServer extends Connection {
 
+    private final String address;
+    private final int port;
+
     public ConnectionToServer(String address, int port, DocumentManager dm) {
         super(dm);
+        this.address = address;
+        this.port = port;
+    }
+
+    @Override
+    public void start() {
         try {
             socket = new Socket(address, port);
         } catch (IOException ex) {
             System.err.println("Connection Failed: " + ex);
             socket = null;
         }
-    }
-
-    @Override
-    public void start() {
         try {
             System.out.println("NET - Init OIS...");
             ois = new ObjectInputStream(socket.getInputStream());
@@ -61,8 +65,7 @@ public class ConnectionToServer extends Connection {
 
     @Override
     protected void onReceiveFail(Exception ex) {
-        JOptionPane.showMessageDialog(null, "Connection to the server closed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
-        close();
+        handleError(ex);
     }
 
     @Override
@@ -84,8 +87,8 @@ public class ConnectionToServer extends Connection {
             }
         }
     }
-    
-    private DocumentManager getDM(){
+
+    private DocumentManager getDM() {
         return (DocumentManager) sp;
     }
 }

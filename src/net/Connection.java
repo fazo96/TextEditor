@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import operations.Operation;
@@ -21,9 +22,11 @@ public abstract class Connection implements Runnable, StackProvider {
     private boolean running;
     private Thread receiver;
     protected StackProvider sp;
+    private ArrayList<NetworkErrorListener> errorHandlers;
 
     public Connection(StackProvider sp) {
         this.sp = sp;
+        errorHandlers = new ArrayList<>();
     }
 
     /**
@@ -109,16 +112,32 @@ public abstract class Connection implements Runnable, StackProvider {
      */
     public void close() {
         running = false;
-        try {
-            socket.close();
-        } catch (IOException ex) {
-            Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
+        errorHandlers.clear();
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                handleError(ex);
+                Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
     @Override
     public Operation getStack() {
         return sp.getStack();
+    }
+
+    public void addErrorListener(NetworkErrorListener l) {
+        errorHandlers.add(l);
+    }
+
+    public void removeErrorListener(NetworkErrorListener l) {
+        errorHandlers.remove(l);
+    }
+
+    protected void handleError(Exception ex) {
+        errorHandlers.forEach(l -> l.onNetworkError(ex));
     }
 
     /**

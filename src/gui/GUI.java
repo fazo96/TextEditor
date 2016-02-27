@@ -9,6 +9,7 @@ import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import net.ConnectionToServer;
+import net.NetworkErrorListener;
 import net.OperationConverter;
 import net.Server;
 import operations.AddOperation;
@@ -18,10 +19,10 @@ import operations.AddOperation;
  *
  * @author fazo
  */
-public class GUI extends javax.swing.JFrame {
+public class GUI extends javax.swing.JFrame implements NetworkErrorListener {
 
     private static GUI gui;
-    
+
     private final DocumentManager dm;
     private Server server;
     private ConnectionToServer connection;
@@ -185,6 +186,7 @@ public class GUI extends javax.swing.JFrame {
             textArea.setEditable(false);
             dm.setListen(false);
             server = new Server(serverSettings.getPort(), dm);
+            server.addErrorListener(this);
             server.start();
             textArea.setText("Hosting a server on port " + server.getPort() + ".\nConnect with another instance of the program to edit");
             statusLabel.setText("Hosting - Port " + server.getPort());
@@ -219,6 +221,7 @@ public class GUI extends javax.swing.JFrame {
         }
         statusLabel.setText("Connecting");
         connection = new ConnectionToServer(hostname, port, dm);
+        connection.addErrorListener(this);
         connection.start();
         dm.linkConnection(connection);
         if (connection.isOnline()) {
@@ -263,10 +266,21 @@ public class GUI extends javax.swing.JFrame {
         serverSettings.requestFocus();
     }//GEN-LAST:event_settingsButtonActionPerformed
 
-    public static GUI get(){
+    @Override
+    public void onNetworkError(Exception ex) {
+        JOptionPane.showMessageDialog(this, "Network Error:\n" + ex, "Network Error", JOptionPane.ERROR_MESSAGE);
+        if (connection != null) {
+            connectMenuItemActionPerformed(null);
+        }
+        if (server != null) {
+            hostMenuItemActionPerformed(null);
+        }
+    }
+
+    public static GUI get() {
         return gui;
     }
-    
+
     /**
      * @param args the command line arguments
      */

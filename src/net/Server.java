@@ -6,7 +6,6 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import operations.Operation;
 
 /**
@@ -24,6 +23,7 @@ public class Server implements Runnable, StackProvider {
     private Operation stack;
     private ArrayList<ConnectionToClient> connections;
     private DocumentManager dm;
+    private ArrayList<NetworkErrorListener> errorHandlers;
 
     /**
      * Starts a Server on the given port. Displays the current document hosted
@@ -34,21 +34,23 @@ public class Server implements Runnable, StackProvider {
      */
     public Server(int port, DocumentManager dm) {
         connections = new ArrayList<>();
+        errorHandlers = new ArrayList<>();
         this.dm = dm;
         this.port = port;
-        try {
-            ss = new ServerSocket(port);
-        } catch (IOException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Error while Hosting Server:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        stopThread = false;
     }
 
     /**
      * Starts listening to clients.
      */
     public void start() {
-        stopThread = true;
+        try {
+            ss = new ServerSocket(port);
+        } catch (IOException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            stopThread = true;
+            handleError(ex);
+        }
         if (thread == null) {
             thread = new Thread(this);
         }
@@ -59,10 +61,12 @@ public class Server implements Runnable, StackProvider {
      * Stops all Server activity and closes all connections.
      */
     public void stop() {
-        try {
-            ss.close();
-        } catch (IOException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+        if (ss != null) {
+            try {
+                ss.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         stopThread = true;
         connections.forEach(Connection::close);
@@ -116,7 +120,6 @@ public class Server implements Runnable, StackProvider {
 
     @Override
     public void run() {
-        stopThread = false;
         while (!stopThread) {
             try {
                 ConnectionToClient c = new ConnectionToClient(ss.accept(), this);
@@ -128,6 +131,18 @@ public class Server implements Runnable, StackProvider {
                 }
             }
         }
+    }
+
+    public void addErrorListener(NetworkErrorListener l) {
+        errorHandlers.add(l);
+    }
+
+    public void removeErrorListener(NetworkErrorListener l) {
+        errorHandlers.remove(l);
+    }
+
+    private void handleError(Exception ex) {
+        errorHandlers.forEach(l -> l.onNetworkError(ex));
     }
 
     /**

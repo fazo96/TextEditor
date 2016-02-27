@@ -11,7 +11,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.Connection;
-import net.OperationConverter;
 import net.StackProvider;
 import operations.OperationApplier;
 
