@@ -97,6 +97,12 @@ public class Server implements Runnable, StackProvider {
         } else {
             // Client sent invalid update!
             System.err.println("Client sent an invalid update!");
+            if (newStack.getPrevious() != null) {
+                System.out.println("New OP is based on " + newStack.getPrevious().getHash());
+            }
+            if (stack != null) {
+                System.out.println("Stack hash is " + stack.getHash());
+            }
             source.sendSync();
         }
         sendToAllExcept(OperationConverter.convert(stack), source);

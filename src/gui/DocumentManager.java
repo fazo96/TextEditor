@@ -83,7 +83,11 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
                     latest = o;
                 } catch (Exception ex) {
                     Logger.getLogger(DocumentManager.class.getName()).log(Level.SEVERE, null, ex);
-                    JOptionPane.showMessageDialog(null, "Error when applying operation to document:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
+                    //JOptionPane.showMessageDialog(null, "Error when applying operation to document:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
+                    // Rebuilding document
+                    wipe();
+                    o.applyTo(this);
+                    latest = o;
                 }
             } else {
                 JOptionPane.showMessageDialog(null, "Error when applying operation to document:\nUpdate was not valid", "Error", JOptionPane.ERROR_MESSAGE);

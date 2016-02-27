@@ -1,6 +1,9 @@
 package operations;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -11,6 +14,7 @@ import java.util.logging.Logger;
  */
 public abstract class Operation implements Serializable {
 
+    private static String nullhash;
     private Operation previous; // The operation on top of which this one is applied
     private String cache; // cache to store result
 
@@ -94,17 +98,17 @@ public abstract class Operation implements Serializable {
      * @throws Exception if lastApplied is not in the operation stack
      */
     public void apply(OperationApplier d, Operation lastApplied) throws Exception {
-        if (previous == null && lastApplied != null) {
-            throw new Exception("lastApplied Operation was not in stack");
-        }
-        if (lastApplied == this) {
+        String las = lastApplied.getHash();
+        if (las.equals(getHash())) {
             return;
         }
-        if (lastApplied == previous) {
+        if (las.equals(getHashOfPrevious())) {
             applyTo(d);
-        } else {
+        } else if (previous != null) {
             previous.apply(d, lastApplied);
             applyTo(d);
+        } else {
+            throw new Exception("Can't apply this operation. Please rebuild document as an alternative");
         }
     }
 
@@ -123,22 +127,32 @@ public abstract class Operation implements Serializable {
      *
      * @return a checksum
      */
-    public int checksum() {
-        return evaluate().hashCode();
+    public String getHash() {
+        String s = evaluate();
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] bytes = digest.digest(s.getBytes("UTF-8"));
+            return javax.xml.bind.DatatypeConverter.printHexBinary(bytes);
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
     public boolean isValidUpdate(Operation o) {
-        return o.getPrevious() == this;
+        return o.getHashOfPrevious().equals(getHash());
     }
 
-    public Operation find(int checksum) {
-        if (checksum() == checksum) {
+    public Operation find(String hash) {
+        if (getHash().equals(hash)) {
             return this;
         }
         if (previous == null) {
             return null;
         }
-        return previous.find(checksum);
+        return previous.find(hash);
     }
 
     /**
@@ -169,6 +183,14 @@ public abstract class Operation implements Serializable {
         cache = null;
     }
 
+    public String getHashOfPrevious() {
+        if (previous != null) {
+            return previous.getHash();
+        } else {
+            return getNullhash();
+        }
+    }
+
     public Operation getPrevious() {
         return previous;
     }
@@ -178,5 +200,16 @@ public abstract class Operation implements Serializable {
     }
 
     public abstract String getName();
+
+    /**
+     *
+     * @return the hash representing an operation resulting to a null string
+     */
+    public static String getNullhash() {
+        if (nullhash == null) {
+            nullhash = new NullOperation(null).getHash();
+        }
+        return nullhash;
+    }
 
 }

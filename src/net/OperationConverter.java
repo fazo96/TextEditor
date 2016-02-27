@@ -1,5 +1,6 @@
 package net;
 
+import gui.Utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,13 +31,13 @@ public class OperationConverter {
      * @return a string representation of the given operation
      */
     public static String convert(Operation o) {
-        int c;
+        String hash;
         if (o.getPrevious() != null) {
-            c = o.getPrevious().checksum();
+            hash = o.getPrevious().getHash();
         } else {
-            c = 0;
+            hash = Operation.getNullhash();
         }
-        String s = c + "|" + o.getName() + '|';
+        String s = hash + "|" + o.getName() + '|';
         if (o instanceof AddOperation) {
             s += ((AddOperation) o).getIndex() + "|" + ((AddOperation) o).getText();
         } else if (o instanceof DelOperation) {
@@ -57,13 +58,13 @@ public class OperationConverter {
      */
     public static Operation read(String s, Operation stack) {
         String ss[] = s.split("\\|", 4);
-        int basen = Integer.parseInt(ss[0]);
+        String  bases = ss[0].trim();
         Operation base = null;
-        if (basen == 0) {
+        if (bases.equals(Operation.getNullhash())) {
             // Base is a null operation
             base = null;
         } else if (stack != null) { // Find base
-            base = stack.find(basen);
+            base = stack.find(bases);
             if (base == null) {
                 // Couldnt find base
                 System.err.println("Could not find base");
