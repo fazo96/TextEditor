@@ -133,9 +133,7 @@ public abstract class Operation implements Serializable {
             MessageDigest digest = MessageDigest.getInstance("MD5");
             byte[] bytes = digest.digest(s.getBytes("UTF-8"));
             return javax.xml.bind.DatatypeConverter.printHexBinary(bytes);
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedEncodingException ex) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
             Logger.getLogger(Operation.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
@@ -189,6 +187,14 @@ public abstract class Operation implements Serializable {
         } else {
             return getNullhash();
         }
+    }
+
+    /**
+     *
+     * @return true if this Operation is based on an empty string
+     */
+    public boolean hasDependencies() {
+        return previous != null || !getHashOfPrevious().equals(getNullhash());
     }
 
     public Operation getPrevious() {

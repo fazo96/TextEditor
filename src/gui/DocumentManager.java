@@ -70,6 +70,13 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
         doc.addDocumentListener(this);
     }
 
+    /**
+     * Applies operation to Document
+     * 
+     * TODO: rewrite this, remove some useless code
+     * 
+     * @param o the operation to apply
+     */
     public void apply(Operation o) {
         if (o != null && latest != o) {
             listen = false;

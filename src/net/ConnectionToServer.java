@@ -58,9 +58,16 @@ public class ConnectionToServer extends Connection {
             return;
         }
         if (isLocalUpdate) {
+            // Update is local
             send(OperationConverter.convert(newStack));
+        } else if ((getStack() == null && !newStack.hasDependencies()) || getStack().isValidUpdate(newStack)) {
+            // Update is from network and valid
+            getDM().apply(newStack);
+        } else {
+            // Update is from network but not valid
+            System.out.println("Received invalid update. Sending SYNCREQ");
+            sendSyncRequest();
         }
-        getDM().apply(newStack);
     }
 
     @Override
@@ -71,21 +78,21 @@ public class ConnectionToServer extends Connection {
     @Override
     protected void onReceiveString(String s) {
         if (s.startsWith("SYNC | ")) {
-            // TODO: Handle Sync
-            /*if (isServer()) {
-                System.err.println("Received SYNC on server. This should not happen.");
-            } else {*/
             System.out.println("Received SYNC. Syncing document");
             getDM().resetTo(new AddOperation(0, s.substring("SYNC | ".length()), null));
         } else {
             Operation recv = OperationConverter.read(s, getStack());
             if (recv == null) {
                 System.out.println("Could not undestand operation: " + s);
-                send("SYNCREQ");
+                sendSyncRequest();
             } else {
                 update(recv, false);
             }
         }
+    }
+
+    private void sendSyncRequest() {
+        send("SYNCREQ");
     }
 
     private DocumentManager getDM() {
