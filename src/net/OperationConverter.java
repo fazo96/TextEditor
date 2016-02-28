@@ -58,7 +58,7 @@ public class OperationConverter {
      */
     public static Operation read(String s, Operation stack) {
         String ss[] = s.split("\\|", 4);
-        String  bases = ss[0].trim();
+        String bases = ss[0].trim();
         Operation base = null;
         if (bases.equals(Operation.getNullhash())) {
             // Base is a null operation
@@ -102,7 +102,11 @@ public class OperationConverter {
     public static void save(Operation o, File f) throws Exception {
         try {
             PrintWriter writer = new PrintWriter(f, "UTF-8");
-            writer.write(o.evaluate());
+            String out = o.evaluate();
+            System.out.println("Writing to file: \"" + out + "\"");
+            writer.write(out);
+            writer.flush();
+            writer.close();
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             throw ex;
         }
