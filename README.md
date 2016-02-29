@@ -1,5 +1,13 @@
 # Multiuser Text Editor
 
-Small University project to see if I can build a multi user text editor using operational transformation.
+Multi User text editor similar to windows' notepad, but with the ability to host servers and work together in real time.
 
-Still very much work in progress
+### Try it
+
+You can find precompiled Java binaries in the [Releases](https://github.com/fazo96/TextEditor/releases)
+
+The software needs a __Java 8 Runtime Environment__ to function.
+
+### Import the project
+
+You can import the project by cloning the repository and importing the folder using the NetBeans IDE.
