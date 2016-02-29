@@ -31,12 +31,12 @@ public class ConnectionToServer extends Connection {
     }
 
     @Override
-    public void start() {
+    public void start() throws Exception {
         try {
             socket = new Socket(address, port);
-        } catch (IOException ex) {
-            System.err.println("Connection Failed: " + ex);
+        } catch (Exception ex) {
             socket = null;
+            throw ex;
         }
         try {
             System.out.println("NET - Init OIS...");
@@ -46,8 +46,7 @@ public class ConnectionToServer extends Connection {
             oos = new ObjectOutputStream(socket.getOutputStream());
             System.out.println("NET - Done Init OOS...");
         } catch (IOException ex) {
-            Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            throw ex;
         }
         super.start();
     }

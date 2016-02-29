@@ -11,6 +11,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.Connection;
+import net.Server;
 import net.StackProvider;
 import operations.OperationApplier;
 
@@ -25,11 +26,11 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
 
     private Operation latest = null;
     private Document doc;
-    private Connection conn;
+    private Connection connection;
+    private Server server;
     private boolean listen = true;
 
     // Start document listener implementation
-    
     @Override
     public void insertUpdate(DocumentEvent de) {
         if (listen && de.getType() == DocumentEvent.EventType.INSERT) {
@@ -56,12 +57,18 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
     public void changedUpdate(DocumentEvent de) {
         // Java's PlainDocument (used in text areas) doesn't emit changedUpdate events
     }
-    
-    // End document listener implementation
 
-    private void sendViaConnection() {
-        if (conn != null) {
-            conn.update(latest, true);
+    // End document listener implementation
+    /**
+     * Syncs current document with server or clients (depending on which end
+     * this instance is acting as)
+     */
+    public void sendViaConnection() {
+        if (connection != null) {
+            connection.update(latest, true);
+        }
+        if (server != null) {
+            server.sendSync();
         }
     }
 
@@ -72,9 +79,9 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
 
     /**
      * Applies operation to Document
-     * 
+     *
      * TODO: rewrite this, remove some useless code
-     * 
+     *
      * @param o the operation to apply
      */
     public void apply(Operation o) {
@@ -108,27 +115,38 @@ public class DocumentManager implements DocumentListener, OperationApplier, Stac
     }
 
     public void linkConnection(Connection c) {
-        this.conn = c;
+        this.connection = c;
     }
 
     public void unlinkConnection() {
-        this.conn = null;
+        this.connection = null;
+    }
+
+    public Connection getLinkedConnection() {
+        return connection;
+    }
+
+    public void linkServer(Server s) {
+        this.server = s;
+    }
+
+    public void unlinkServer() {
+        this.server = null;
+    }
+
+    public Server getLinkedServer() {
+        return server;
     }
 
     public void wipe() {
         if (latest != null) {
             apply(new DelOperation(0, latest.evaluate().length(), latest));
-            latest = null;
         }
     }
 
     @Override
     public Operation getStack() {
         return latest;
-    }
-
-    public Connection getLinkedConnection() {
-        return conn;
     }
 
     public boolean isListening() {

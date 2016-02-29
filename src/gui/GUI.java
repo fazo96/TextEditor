@@ -13,6 +13,7 @@ import net.NetworkErrorListener;
 import net.OperationConverter;
 import net.Server;
 import operations.AddOperation;
+import operations.Operation;
 
 /**
  * Entry point and Graphical User Interface
@@ -187,11 +188,13 @@ public class GUI extends javax.swing.JFrame implements NetworkErrorListener {
             dm.setListen(false);
             server = new Server(serverSettings.getPort(), dm);
             server.addErrorListener(this);
+            dm.linkServer(server);
             server.start();
             textArea.setText("Hosting a server on port " + server.getPort() + ".\nConnect with another instance of the program to edit");
             statusLabel.setText("Hosting - Port " + server.getPort());
             hostMenuItem.setText("Stop Hosting");
         } else {
+            dm.unlinkServer();
             server.stop();
             server = null;
             textArea.setEditable(true);
@@ -222,13 +225,21 @@ public class GUI extends javax.swing.JFrame implements NetworkErrorListener {
         statusLabel.setText("Connecting");
         connection = new ConnectionToServer(hostname, port, dm);
         connection.addErrorListener(this);
-        connection.start();
+        boolean failed = false;
+        try {
+            connection.start();
+        } catch (Exception ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+            failed = true;
+            JOptionPane.showMessageDialog(this, "Connection failed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
+        }
         dm.linkConnection(connection);
-        if (connection.isOnline()) {
+        if (!failed) {
             statusLabel.setText("Online - Connected to " + connection.getAddress() + ":" + connection.getPort());
             connectMenuItem.setText("Disconnect");
         } else {
-            JOptionPane.showMessageDialog(this, "Connection failed", "Error", JOptionPane.ERROR_MESSAGE);
+            statusLabel.setText("Offline");
+            connection = null;
         }
     }
 
@@ -240,7 +251,20 @@ public class GUI extends javax.swing.JFrame implements NetworkErrorListener {
             String s;
             try {
                 s = OperationConverter.load(f);
-                dm.resetTo(new AddOperation(0, s, null));
+                Operation o = new AddOperation(0, s, null);
+                if (connection != null) {
+                    // Fixes problem with resetTo generating two Operations
+                    dm.wipe();
+                    dm.sendViaConnection();
+                    dm.apply(new AddOperation(0, s, null));
+                } else {
+                    dm.resetTo(o);
+                    if (server != null) {
+                        server.setStack(o);
+                        server.sendSync();
+                    }
+                }
+                dm.sendViaConnection();
             } catch (FileNotFoundException ex) {
                 JOptionPane.showMessageDialog(this, "Load Operation failed:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
             }

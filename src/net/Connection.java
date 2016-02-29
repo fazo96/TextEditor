@@ -32,8 +32,9 @@ public abstract class Connection implements Runnable, StackProvider {
     /**
      * Starts receiving messages. This method assumes an already open socket and
      * correctly initialized Object Streams.
+     * @throws java.lang.Exception if something went wrong when starting the connection
      */
-    protected void start() {
+    protected void start() throws Exception {
         System.out.println("NET - Init connection...");
         running = true;
         receiver = new Thread(this);

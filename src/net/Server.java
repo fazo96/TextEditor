@@ -94,7 +94,10 @@ public class Server implements Runnable, StackProvider {
                 dm.apply(stack);
             }
         } else if (stack.isValidUpdate(newStack)) {
-            stack = newStack;
+
+            synchronized (stack) {
+                stack = newStack;
+            }
             if (dm != null) {
                 dm.apply(stack);
             }
@@ -116,6 +119,12 @@ public class Server implements Runnable, StackProvider {
     @Override
     public Operation getStack() {
         return stack;
+    }
+
+    public void setStack(Operation s) {
+        synchronized (stack) {
+            stack = s;
+        }
     }
 
     @Override
@@ -156,6 +165,10 @@ public class Server implements Runnable, StackProvider {
         connections.stream()
                 .filter((Connection t) -> t != c)
                 .forEach(conn -> conn.send(s));
+    }
+
+    public void sendSync() {
+        connections.forEach(ConnectionToClient::sendSync);
     }
 
     public int getPort() {

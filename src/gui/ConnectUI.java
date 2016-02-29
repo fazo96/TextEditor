@@ -1,9 +1,12 @@
 package gui;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 /**
  * User Interface to connect to a server
+ *
  * @author fazo
  */
 public class ConnectUI extends javax.swing.JFrame {
@@ -18,7 +21,7 @@ public class ConnectUI extends javax.swing.JFrame {
      */
     public ConnectUI(GUI gui) {
         initComponents();
-        portField.setText(""+Utils.defaultPort());
+        portField.setText("" + Utils.defaultPort());
         this.gui = gui;
     }
 
@@ -115,7 +118,8 @@ public class ConnectUI extends javax.swing.JFrame {
             setVisible(false);
             gui.connect(hostnameField.getText().trim(), port);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Port number invalid:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ConnectUI.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Error:\n" + ex, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_connectButtonActionPerformed
 

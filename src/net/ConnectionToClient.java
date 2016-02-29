@@ -41,7 +41,11 @@ public class ConnectionToClient extends Connection {
         } catch (IOException ex) {
             Logger.getLogger(Connection.class.getName()).log(Level.SEVERE, null, ex);
         }
-        super.start();
+        try {
+            super.start();
+        } catch (Exception ex) {
+            Logger.getLogger(ConnectionToClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
         sendSync();
     }
 
